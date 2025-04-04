@@ -91,6 +91,33 @@ Creați containerul frontend cu următoarele proprietăți:
 
 Pentru a testa funcționarea site-ului, deschideți site-ul în browser, trecând la adresa http://localhost. Dacă este afișată pagina de pornire nginx, atunci reîncărcați pagina.
 
+## Intrebari
+
+1. În ce mod în acest exemplu containerele pot interacționa unul cu celălalt?
+
+Containerele interacționează prin rețeaua Docker internal, pe care am creat-o cu:
+```bash
+docker network create internal
+```
+În această rețea, containerul frontend (Nginx) comunică cu backend (PHP-FPM) prin FastCGI la portul 9000.
+
+2. Cum văd containerele unul pe celălalt în cadrul rețelei internal?
+
+Docker asignează fiecărui container un nume DNS bazat pe numele containerului.
+Astfel, frontend poate contacta backend folosind simplu backend, fără a fi nevoie de o adresă IP fixă.
+
+3. De ce a fost necesar să se suprascrie configurarea nginx?
+
+Implicit, imaginea oficială Nginx nu este configurată să ruleze fișiere PHP.
+Pentru ca Nginx să trimită cererile .php către backend, a fost necesar să suprascriem configurația standard cu fișierul nginx/default.conf.
+
+## Concluzie
+
+Prin implementarea acestui proiect, am creat un mediu de dezvoltare Docker care include două containere: unul pentru serverul PHP (backend) și unul pentru Nginx (frontend). Aceste containere sunt interconectate într-o rețea internă, iar fișierele necesare (site-ul PHP și configurațiile Nginx) sunt montate corect în fiecare container.
+
+Prin utilizarea Docker și Docker Compose, am simplificat configurarea și gestionarea acestor containere, asigurându-ne că aplicația PHP rulează corect sub Nginx, iar accesul la site este posibil printr-o adresă locală (http://localhost).
+
+Această soluție permite un mediu de dezvoltare eficient și ușor de gestionat, care poate fi extins ulterior sau adaptat pentru producție, având toate componentele esențiale izolate într-un mod flexibil și portabil.
 
 
 
