@@ -48,6 +48,30 @@ RUN apt-get update && \
     apt-get install -y apache2 php libapache2-mod-php php-mysql mariadb-server && \
     apt-get clean
 ```
+![image](https://github.com/user-attachments/assets/4c4da172-bada-4271-a577-913d2ec1c7a7)
+
+Construiți o imagine a containerului cu numele apache2-php-mariadb.
+
+```bash
+docker build -t apache2-php-mariadb .
+```
+![image](https://github.com/user-attachments/assets/9193dfaa-2d83-4be5-92c5-7f8d6e02d695)
+
+Creați un container apache2-php-mariadb din imaginea apache2-php-mariadb și porniți-l în modul de fundal cu comanda bash.
+![image](https://github.com/user-attachments/assets/8863bbf3-800f-47f7-bc47-4b9d4fa7e8d1)
+
+Copiați din container fișierele de configurare apache2, php, mariadb în directorul files/ de pe computer. Pentru a face acest lucru, în contextul proiectului, executați comenzile:
+
+```bash
+docker cp apache2-php-mariadb:/etc/apache2/sites-available/000-default.conf files/apache2/
+docker cp apache2-php-mariadb:/etc/apache2/apache2.conf files/apache2/
+docker cp apache2-php-mariadb:/etc/php/8.2/apache2/php.ini files/php/
+docker cp apache2-php-mariadb:/etc/mysql/mariadb.conf.d/50-server.cnf files/mariadb/
+```
+
+
+
+
 
 
 
