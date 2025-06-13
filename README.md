@@ -68,6 +68,155 @@ docker cp apache2-php-mariadb:/etc/apache2/apache2.conf files/apache2/
 docker cp apache2-php-mariadb:/etc/php/8.2/apache2/php.ini files/php/
 docker cp apache2-php-mariadb:/etc/mysql/mariadb.conf.d/50-server.cnf files/mariadb/
 ```
+![image](https://github.com/user-attachments/assets/52ba8d96-9d44-4ef9-ae14-c66dd09af7df)
+
+
+După executarea comenzilor, în directorul files/ ar trebui să apară fișierele de configurare apache2, php, mariadb. Verificați dacă acestea există. Opriți și ștergeți containerul apache2-php-mariadb.
+Oprim si stergem containerul apache2-php-mariadb:
+
+```bash
+docker stop apache2-php-mariadb
+docker rm apache2-php-mariadb
+```
+![image](https://github.com/user-attachments/assets/68cfaf7d-1cec-4720-9f3b-fe554e657772)
+
+##Configurarea
+Fișierul de configurare apache2
+
+Deschideți fișierul files/apache2/000-default.conf, găsiți linia #ServerName www.example.com și înlocuiți-o cu ServerName localhost.
+![image](https://github.com/user-attachments/assets/064bb54a-1ee8-4633-be63-588351f74770)
+Găsiți linia ServerAdmin webmaster@localhost și înlocuiți adresa de e-mail cu a dvs.
+![image](https://github.com/user-attachments/assets/b8e0eaf3-52b2-44f8-9d13-8edd5872f7b3)
+După linia DocumentRoot /var/www/html adăugați următoarea linie:
+
+```bash
+DirectoryIndex index.php index.html
+```
+![image](https://github.com/user-attachments/assets/c3228046-fa02-48f6-8efe-5abb4712b428)
+
+La sfârșitul fișierului files/apache2/apache2.conf adăugați următoarea linie:
+
+```bash
+ServerName localhost
+```
+![image](https://github.com/user-attachments/assets/82f9b4af-1223-4286-ae71-f21f71f299b3)
+
+##Fișierul de configurare php
+
+Deschideți fișierul files/php/php.ini, găsiți linia ;error_log = php_errors.log și înlocuiți-o cu error_log = /var/log/php_errors.log.
+![image](https://github.com/user-attachments/assets/d142a537-0b8c-4ca7-857c-83c422529a9e)
+
+Setați parametrii memory_limit, upload_max_filesize, post_max_size și max_execution_time astfel:
+
+memory_limit = 128M
+upload_max_filesize = 128M
+post_max_size = 128M
+max_execution_time = 120
+
+##Fișierul de configurare mariadb
+
+Deschideți fișierul files/mariadb/50-server.cnf, găsiți linia #log_error = /var/log/mysql/error.log și eliminați # din fața ei.
+![image](https://github.com/user-attachments/assets/5c31d1bc-cf40-447b-bcb2-0b80b3636379)
+
+##Crearea scriptului de pornire
+
+In directorul files creati directorul supervisor si fisierul supervisord.conf cu urmatorul continut:
+
+```bash
+[supervisord]
+nodaemon=true
+logfile=/dev/null
+user=root
+
+# apache2
+[program:apache2]
+command=/usr/sbin/apache2ctl -D FOREGROUND
+autostart=true
+autorestart=true
+startretries=3
+stderr_logfile=/proc/self/fd/2
+user=root
+
+# mariadb
+[program:mariadb]
+command=/usr/sbin/mariadbd --user=mysql
+autostart=true
+autorestart=true
+startretries=3
+stderr_logfile=/proc/self/fd/2
+user=mysql
+```
+![image](https://github.com/user-attachments/assets/d392b669-7564-4ce3-af8a-e5f32db64641)
+
+##Crearea Dockerfile
+
+Deschiți fișierul Dockerfile și adăugați următoarele linii:
+după instrucția FROM ... adăugați montarea volumelor:
+
+```bash
+# mount volume for mysql data
+VOLUME /var/lib/mysql
+
+# mount volume for logs
+VOLUME /var/log
+```
+![image](https://github.com/user-attachments/assets/c018c680-313e-46b7-ab0c-ca41a1cb9bb0)
+
+în instrucția RUN ... adăugați instalarea pachetului supervisor.
+![image](https://github.com/user-attachments/assets/a0a1bba6-cddb-4d4a-b710-3dd662af3203)
+
+după instrucția RUN ... adăugați copierea și dezarhivarea site-ului WordPress:
+![image](https://github.com/user-attachments/assets/d5ddff57-05f2-441d-a14b-d153c9ec9d02)
+
+după copierea fișierelor WordPress adăugați copierea fișierelor de configurare apache2, php, mariadb, așa cum și a scriptului de pornire:
+![image](https://github.com/user-attachments/assets/39b8ee31-2fe7-475a-8e22-dae97aa7ebaf)
+
+pentru functionarea mariadb creati directorul /var/run/mysqld si setati permisiile pe el:
+![image](https://github.com/user-attachments/assets/dc7f735e-e04b-407e-a84b-b287646aaf5b)
+
+deschideti portul 80.
+adăugați comanda de pornire supervisord:
+![image](https://github.com/user-attachments/assets/197aaf0d-c1e8-4f16-bc89-09b7cc2b8d92)
+
+Creati imaginea containerului cu numele apache2-php-mariadb și porniți containerul apache2-php-mariadb din imaginea apache2-php-mariadb. Verificați dacă site-ul WordPress este disponibil la adresa http://localhost/. Verificați dacă in directorul /var/www/html/ există fișierele site-ului WordPress. Verificați dacă fișierele de configurare apache2, php, mariadb sunt modificate.
+![image](https://github.com/user-attachments/assets/fcab8013-a91a-42ba-a6cc-6fbd397f20ed)
+![image](https://github.com/user-attachments/assets/52188c7e-1f73-47fc-84f0-9df9474e493d)
+
+Verificăm dacă site-ul WordPress este disponibil
+
+##Crearea bazelor de date și a utilizatorului pentru WordPress
+
+Crearea bazelor de date și a utilizatorului pentru WordPress se face în containerul apache2-php-mariadb. Pentru a face acest lucru, conectați-vă la containerul apache2-php-mariadb și executați comenzile:
+
+```bash
+mysql
+CREATE DATABASE wordpress;
+CREATE USER 'wordpress'@'localhost' IDENTIFIED BY 'wordpress';
+GRANT ALL PRIVILEGES ON wordpress.* TO 'wordpress'@'localhost';
+FLUSH PRIVILEGES;
+EXIT;
+```
+
+![image](https://github.com/user-attachments/assets/a75958d2-7f2e-4cf3-8beb-5ca78ce6f30b)
+
+##Crearea fișierului de configurare WordPress
+
+Deschideți în browser site-ul WordPress la adresa http://localhost/ și urmați instrucțiunile pentru instalarea site-ului WordPress. La pasul 2, specificați următoarele date:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
